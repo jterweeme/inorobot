@@ -3,6 +3,19 @@
 Servo panServo;
 Servo tiltServo;
 
+unsigned int afstandLinks = 0;
+unsigned int afstandRechts = 0;
+
+ISR(PCINT4_vect)
+{
+  afstandLinks++;
+}
+
+ISR(PCINT13_vect)
+{
+  afstandRechts++;
+}
+
 String inputString;
 boolean stringComplete = false;
 unsigned int distance = 0;
@@ -15,10 +28,15 @@ void setup()
   panServo.attach(3);
   tiltServo.attach(11);
   Serial.begin(9600);
-  pinMode(A0, OUTPUT);
-  pinMode(A2, INPUT);
+  pinMode(A1, OUTPUT);
+  pinMode(A3, INPUT);
   digitalWrite(A0, HIGH);
   pinMode(13, OUTPUT);
+  /*
+  PCICR = (1<<PCIE0) | (1<<PCIE1);
+  PCMSK0 = (1<<PCINT4);
+  PCMSK1 = (1<<PCINT13);
+  */
 }
 
 void command(char *cmd)
@@ -26,9 +44,14 @@ void command(char *cmd)
   char *commando = strtok((char *)cmd, " ,.-\r");
   char *parameter = strtok((char *)NULL, " ,.-");
   unsigned int deg = atoi(parameter);
-  
+
+  // pan  
   if (strcmp(commando, "p") == 0)
-    PORTB ^= (1<<5);
+    panServo.write(deg);
+    
+  // tilt
+  if (strcmp(commando, "t") == 0)
+    tiltServo.write(deg);
     
   // linksvooruit
   if (strcmp(commando, "q") == 0)
@@ -57,6 +80,15 @@ void command(char *cmd)
     digitalWrite(7, LOW);
     analogWrite(6, deg);
   }
+
+  // afstand
+  if (strcmp(commando, "o") == 0)
+  {
+    Serial.println(1);
+    Serial.println(afstandLinks);
+    Serial.println(afstandRechts);
+    
+  }
   
   // sonic
   if (strcmp(commando, "d") == 0)
@@ -70,11 +102,13 @@ void command(char *cmd)
 
 void loop()
 {
-  digitalWrite(A0, LOW);
-  digitalWrite(A0, HIGH);
-  unsigned long distanceMeasured = pulseIn(A2, LOW);
+  /*
+  digitalWrite(A1, LOW);
+  digitalWrite(A1, HIGH);
+  unsigned long distanceMeasured = pulseIn(A3, LOW);
   distance = distanceMeasured / 50;
   delay(20);
+  */
 }
 
 void serialEvent()
